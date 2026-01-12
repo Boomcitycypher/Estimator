@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Motor Bros – Vehicle Price Estimator</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: #111a2b;
+      --muted: #a7b1c2;
+      --text: #eef2ff;
+      --accent: #60a5fa;
+      --input: #0f172a;
+      --border: rgba(255,255,255,0.10);
+      --warn: #fbbf24;
+    }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 980px; margin: 24px auto; padding: 0 16px 60px; }
+    h1 { font-size: 22px; margin: 6px 0 4px; }
+    .sub { color: var(--muted); margin: 0 0 18px; }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 860px) {
+      .grid { grid-template-columns: 1.2fr 0.8fr; gap: 18px; }
+    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+    .sectionTitle { font-weight: 700; margin: 0 0 10px; }
+    .formGrid { display:grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 640px) {
+      .formGrid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    }
+    label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input, select {
+      width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--input); color: var(--text);
+      outline: none;
+    }
+    input:focus, select:focus { border-color: rgba(96,165,250,0.8); box-shadow: 0 0 0 4px rgba(96,165,250,0.15); }
+    .row { display:flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      cursor: pointer; border: 1px solid var(--border); background: rgba(96,165,250,0.15); color: var(--text);
+      padding: 10px 12px; border-radius: 12px; font-weight: 650;
+    }
+    button:hover { background: rgba(96,165,250,0.25); }
+    button.secondary { background: transparent; }
+    .kpi { display:grid; grid-template-columns: 1fr; gap: 10px; }
+    .kpiBox { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+    .kpiLabel { color: var(--muted); font-size: 12px; }
+    .kpiValue { font-size: 20px; font-weight: 800; margin-top: 4px; }
+    .small { color: var(--muted); font-size: 12px; }
+    table { width:100%; border-collapse: collapse; margin-top: 10px; }
+    td { padding: 8px 6px; border-bottom: 1px solid var(--border); }
+    td:first-child { color: var(--muted); }
+    .pill {
+      display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .warn { color: var(--warn); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Motor Bros – Vehicle Price Estimator</h1>
+    <p class="sub">Web form version of your <code>Motor Bros - Estimator-AI.xlsx</code> logic (duty lookup + landed cost + selling price + profit).</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="sectionTitle">Inputs</div>
+
+        <div class="formGrid">
+          <div>
+            <label>VIN / Chassis</label>
+            <input id="vin" type="text" placeholder="Optional" />
+          </div>
+          <div>
+            <label>Make</label>
+            <input id="make" type="text" value="Nissan" />
+          </div>
+
+          <div>
+            <label>Model</label>
+            <input id="model" type="text" value="Kicks" />
+          </div>
+          <div>
+            <label>Year</label>
+            <input id="year" type="number" step="1" value="2023" />
+          </div>
+
+          <div style="grid-column: 1 / -1;">
+            <label>Fuel / Type (for duty)</label>
+            <select id="vehicleType"></select>
+            <div class="small" id="rateHint"></div>
+          </div>
+
+          <div>
+            <label>Vendor Price (USD)</label>
+            <input id="vendorPrice" type="number" step="0.01" value="18500" />
+          </div>
+          <div>
+            <label>Wire Fee (USD)</label>
+            <input id="wireFee" type="number" step="0.01" value="30" />
+          </div>
+
+          <div>
+            <label>Commission (USD)</label>
+            <input id="commission" type="number" step="0.01" value="95" />
+          </div>
+          <div>
+            <label>FX Fee (%)</label>
+            <input id="fxFeePct" type="number" step="0.01" value="2" />
+            <div class="small">Enter as percent (e.g., 2 for 2%).</div>
+          </div>
+
+          <div>
+            <label>USD→BDS Conversion</label>
+            <input id="usdToBds" type="number" step="0.0001" value="2.02" />
+          </div>
+          <div>
+            <label>Declaration Price (USD)</label>
+            <input id="declarationUsd" type="number" step="0.01" value="3800" />
+          </div>
+
+          <div>
+            <label>Exchange Rate (BDS per USD)</label>
+            <input id="exchangeRate" type="number" step="0.0001" value="2" />
+          </div>
+          <div>
+            <label>VAT Rate (%)</label>
+            <input id="vatPct" type="number" step="0.01" value="17.5" />
+          </div>
+
+          <div>
+            <label>Processing Fee (BDS)</label>
+            <input id="processingFee" type="number" step="0.01" value="10" />
+          </div>
+          <div>
+            <label>Markup (%)</label>
+            <input id="markupPct" type="number" step="0.01" value="25" />
+          </div>
+
+          <div>
+            <label>Title/Registration (BDS)</label>
+            <input id="titleReg" type="number" step="0.01" value="750" />
+          </div>
+          <div>
+            <label>Repairs/Reconditioning (BDS)</label>
+            <input id="repairs" type="number" step="0.01" value="500" />
+          </div>
+
+          <div>
+            <label>Detailing (BDS)</label>
+            <input id="detailing" type="number" step="0.01" value="200" />
+          </div>
+          <div>
+            <label>Other Local Costs (BDS)</label>
+            <input id="otherLocal" type="number" step="0.01" value="500" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 14px;">
+          <button id="btnCalc">Calculate</button>
+          <button id="btnSave" class="secondary">Save Deal (local)</button>
+          <button id="btnExport" class="secondary">Export Saved Deals (CSV)</button>
+          <span class="pill" id="savedCount">0 saved</span>
+        </div>
+
+        <p class="small" style="margin-top: 10px;">
+          Notes: This form uses the same math as the spreadsheet:
+          <span class="warn">Subtotal USD</span> = Vendor + Wire + Commission,
+          <span class="warn">Subtotal BDS</span> = SubtotalUSD × USD→BDS × (1 + FX%),
+          duty/excise are looked up by Vehicle Type.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="sectionTitle">Results</div>
+
+        <div class="kpi">
+          <div class="kpiBox">
+            <div class="kpiLabel">Total Landed Cost (BDS)</div>
+            <div class="kpiValue" id="landedCost">—</div>
+            <div class="small" id="landedBreakdown"></div>
+          </div>
+          <div class="kpiBox">
+            <div class="kpiLabel">Suggested Selling Price (BDS)</div>
+            <div class="kpiValue" id="sellPrice">—</div>
+            <div class="small">Uses your Markup %.</div>
+          </div>
+          <div class="kpiBox">
+            <div class="kpiLabel">Profit (BDS) / Margin</div>
+            <div class="kpiValue" id="profit">—</div>
+            <div class="small" id="margin">—</div>
+          </div>
+        </div>
+
+        <table>
+          <tr><td>Subtotal (USD)</td><td id="subtotalUsd">—</td></tr>
+          <tr><td>Subtotal (BDS)</td><td id="subtotalBds">—</td></tr>
+          <tr><td>Customs Value (BDS)</td><td id="customsValue">—</td></tr>
+          <tr><td>Import Duty (BDS)</td><td id="importDuty">—</td></tr>
+          <tr><td>Excise Tax (BDS)</td><td id="exciseTax">—</td></tr>
+          <tr><td>VAT (BDS)</td><td id="vat">—</td></tr>
+          <tr><td>Total Duties & Fees (BDS)</td><td id="dutiesTotal">—</td></tr>
+          <tr><td>Local Costs (BDS)</td><td id="localCosts">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Duty table copied from the workbook's "Import Duties " sheet (A2:C8)
+    const DUTY_TABLE = [{"vehicleType": "Petrol <=1600cc", "duty": 0.45, "excise": 0.4695}, {"vehicleType": "Petrol >= 2000cc", "duty": 0.0, "excise": 0.0}, {"vehicleType": "Petrol >=1800cc", "duty": 0.45, "excise": 0.7634}, {"vehicleType": "Hybrid <=1600cc", "duty": 0.35, "excise": 0.2}, {"vehicleType": "Hybrid >= 2000cc", "duty": 0.35, "excise": 0.7634}, {"vehicleType": "Hybrid 18000-1999cc", "duty": 0.35, "excise": 0.4695}, {"vehicleType": "Electric Car", "duty": 0.45, "excise": 0.1}];
+
+    const $ = (id) => document.getElementById(id);
+
+    function n(v) {
+      const x = Number(v);
+      return Number.isFinite(x) ? x : 0;
+    }
+
+    // Format as BDS currency (change to USD if you want)
+    function moneyBDS(v) {
+      return n(v).toLocaleString(undefined, { style: "currency", currency: "BBD" });
+    }
+    function moneyUSD(v) {
+      return n(v).toLocaleString(undefined, { style: "currency", currency: "USD" });
+    }
+    function pct(v) {
+      return (n(v) * 100).toFixed(2) + "%";
+    }
+
+    function getRates(vehicleType) {
+      const row = DUTY_TABLE.find(r => r.vehicleType === vehicleType);
+      return row ? { duty: n(row.duty), excise: n(row.excise) } : { duty: 0, excise: 0 };
+    }
+
+    function calculate() {
+      const vehicleType = $("vehicleType").value;
+      const rates = getRates(vehicleType);
+
+      // Inputs (Excel equivalents)
+      const vendorPrice = n($("vendorPrice").value);         // B11
+      const wireFee     = n($("wireFee").value);             // B12
+      const fxFee       = n($("fxFeePct").value) / 100;      // B13 (entered as %)
+      const commission  = n($("commission").value);          // B14
+      const usdToBds    = n($("usdToBds").value);            // B15
+
+      const declarationUsd = n($("declarationUsd").value);   // B19
+      const exchangeRate   = n($("exchangeRate").value);     // B20
+      const vatRate        = n($("vatPct").value) / 100;     // B21 (entered as %)
+      const processingFee  = n($("processingFee").value);    // B22
+
+      const titleReg   = n($("titleReg").value);             // B32
+      const repairs    = n($("repairs").value);              // B33
+      const detailing  = n($("detailing").value);            // B34
+      const otherLocal = n($("otherLocal").value);           // B35
+
+      const markup = n($("markupPct").value) / 100;          // B40 (entered as %)
+
+      // === Spreadsheet formulas replicated ===
+      // D12 = B11+B12+B14
+      const subtotalUsd = vendorPrice + wireFee + commission;
+
+      // E12 = D12*B15*(1+B13)
+      const subtotalBds = subtotalUsd * usdToBds * (1 + fxFee);
+
+      // D20/E20 duty/excise lookup by vehicle type
+      const dutyPct = rates.duty;
+      const excisePct = rates.excise;
+
+      // B24 = B19*B20
+      const customsValue = declarationUsd * exchangeRate;
+
+      // B25 = B24*Duty%
+      const importDuty = customsValue * dutyPct;
+
+      // B26 = (B24+B25)*Excise%
+      const exciseTax = (customsValue + importDuty) * excisePct;
+
+      // B27 = (B24+B25+B26)*VAT
+      const vat = (customsValue + importDuty + exciseTax) * vatRate;
+
+      // B28 = B25+B26+B27+ProcessingFee
+      const dutiesTotal = importDuty + exciseTax + vat + processingFee;
+
+      // B36 = SUM(B32:B35)
+      const localCosts = titleReg + repairs + detailing + otherLocal;
+
+      // B39 = E12+B28+B36
+      const landedCost = subtotalBds + dutiesTotal + localCosts;
+
+      // B41 = B39*(1+B40)
+      const sellPrice = landedCost * (1 + markup);
+
+      // B42 = B41-B39
+      const profit = sellPrice - landedCost;
+
+      // B43 = B42/B41
+      const margin = sellPrice > 0 ? (profit / sellPrice) : 0;
+
+      // === Render ===
+      $("subtotalUsd").textContent = moneyUSD(subtotalUsd);
+      $("subtotalBds").textContent = moneyBDS(subtotalBds);
+      $("customsValue").textContent = moneyBDS(customsValue);
+      $("importDuty").textContent = moneyBDS(importDuty);
+      $("exciseTax").textContent = moneyBDS(exciseTax);
+      $("vat").textContent = moneyBDS(vat);
+      $("dutiesTotal").textContent = moneyBDS(dutiesTotal);
+      $("localCosts").textContent = moneyBDS(localCosts);
+
+      $("landedCost").textContent = moneyBDS(landedCost);
+      $("sellPrice").textContent = moneyBDS(sellPrice);
+      $("profit").textContent = moneyBDS(profit);
+      $("margin").textContent = "Margin: " + (margin*100).toFixed(2) + "%";
+
+      $("landedBreakdown").textContent =
+        "Subtotal(BDS) " + moneyBDS(subtotalBds) +
+        " + Duties " + moneyBDS(dutiesTotal) +
+        " + Local " + moneyBDS(localCosts);
+
+      $("rateHint").textContent =
+        "Rates for “" + vehicleType + "”: Import Duty " + (dutyPct*100).toFixed(2) + "%, Excise " + (excisePct*100).toFixed(2) + "%";
+
+      return {
+        vin: $("vin").value.trim(),
+        make: $("make").value.trim(),
+        model: $("model").value.trim(),
+        year: $("year").value.trim(),
+        vehicleType,
+        inputs: {
+          vendorPrice, wireFee, commission, fxFee, usdToBds,
+          declarationUsd, exchangeRate, vatRate, processingFee,
+          titleReg, repairs, detailing, otherLocal, markup
+        },
+        outputs: {
+          subtotalUsd, subtotalBds, customsValue, importDuty, exciseTax, vat, dutiesTotal, localCosts,
+          landedCost, sellPrice, profit, margin
+        },
+        savedAt: new Date().toISOString()
+      };
+    }
+
+    function loadDutyDropdown() {
+      const sel = $("vehicleType");
+      sel.innerHTML = "";
+      for (const row of DUTY_TABLE) {
+        const opt = document.createElement("option");
+        opt.value = row.vehicleType;
+        opt.textContent = row.vehicleType;
+        sel.appendChild(opt);
+      }
+      sel.value = "Electric Car";
+    }
+
+    function getSavedDeals() {
+      try {
+        return JSON.parse(localStorage.getItem("motorbros_deals") || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function setSavedDeals(deals) {
+      localStorage.setItem("motorbros_deals", JSON.stringify(deals));
+      $("savedCount").textContent = deals.length + " saved";
+    }
+
+    function saveDeal() {
+      const deal = calculate();
+      const deals = getSavedDeals();
+      deals.unshift(deal);
+      setSavedDeals(deals);
+      alert("Saved! (" + deals.length + " total)");
+    }
+
+    function exportCSV() {
+      const deals = getSavedDeals();
+      if (!deals.length) {
+        alert("No saved deals yet.");
+        return;
+      }
+      const headers = [
+        "savedAt","vin","make","model","year","vehicleType",
+        "vendorPriceUSD","wireFeeUSD","commissionUSD","fxFee","usdToBds",
+        "declarationUsd","exchangeRate","vatRate","processingFee",
+        "titleReg","repairs","detailing","otherLocal","markup",
+        "subtotalUsd","subtotalBds","customsValue","importDuty","exciseTax","vat","dutiesTotal","localCosts",
+        "landedCost","sellPrice","profit","margin"
+      ];
+
+      const rows = deals.map(d => [
+        d.savedAt, d.vin, d.make, d.model, d.year, d.vehicleType,
+        d.inputs.vendorPrice, d.inputs.wireFee, d.inputs.commission, d.inputs.fxFee, d.inputs.usdToBds,
+        d.inputs.declarationUsd, d.inputs.exchangeRate, d.inputs.vatRate, d.inputs.processingFee,
+        d.inputs.titleReg, d.inputs.repairs, d.inputs.detailing, d.inputs.otherLocal, d.inputs.markup,
+        d.outputs.subtotalUsd, d.outputs.subtotalBds, d.outputs.customsValue, d.outputs.importDuty, d.outputs.exciseTax, d.outputs.vat, d.outputs.dutiesTotal, d.outputs.localCosts,
+        d.outputs.landedCost, d.outputs.sellPrice, d.outputs.profit, d.outputs.margin
+      ]);
+
+      const esc = (v) => {
+        const s = String(v ?? "");
+        return /[",\n]/.test(s) ? '"' + s.replaceAll('"','""') + '"' : s;
+      };
+
+      const csv = [headers.join(","), ...rows.map(r => r.map(esc).join(","))].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "motorbros_saved_deals.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // Wire up
+    loadDutyDropdown();
+    setSavedDeals(getSavedDeals());
+    $("btnCalc").addEventListener("click", () => calculate());
+    $("btnSave").addEventListener("click", () => saveDeal());
+    $("btnExport").addEventListener("click", () => exportCSV());
+    $("vehicleType").addEventListener("change", () => calculate());
+
+    // auto-calc once on load
+    calculate();
+  </script>
+</body>
+</html>
