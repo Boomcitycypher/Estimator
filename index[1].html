@@ -5,45 +5,173 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Motor Bros – Vehicle Calculator</title>
   <style>
-    :root { --border:#e5e7eb; --muted:#6b7280; --bg:#f9fafb; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 980px; margin: 22px auto; padding: 0 14px; color:#111827; }
-    h1 { font-size: 22px; margin: 0 0 8px; }
-    h2 { font-size: 16px; margin: 18px 0 8px; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .card { border:1px solid var(--border); border-radius: 14px; padding: 14px; background: white; }
-    .row { display:grid; grid-template-columns: repeat(12, 1fr); gap: 10px; }
+    :root {
+      --bg: #070e1a;
+      --card: #0f1928;
+      --muted: #8b95a8;
+      --text: #e8eeff;
+      --accent: #60a5fa;
+      --accent2: #a78bfa;
+      --input-bg: #080f1c;
+      --border: rgba(255,255,255,0.07);
+      --border-accent: rgba(96,165,250,0.25);
+      --warn: #fbbf24;
+      --success: #34d399;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Header ── */
+    .page-header {
+      background: linear-gradient(135deg, #0d2040 0%, #0b1220 45%, #150d2e 100%);
+      border-bottom: 1px solid rgba(96,165,250,0.15);
+      padding: 28px 24px 22px;
+      position: relative; overflow: hidden;
+    }
+    .page-header::before {
+      content: ''; position: absolute; top: -60px; right: -40px;
+      width: 280px; height: 280px;
+      background: radial-gradient(circle, rgba(96,165,250,0.1) 0%, transparent 65%);
+      border-radius: 50%;
+    }
+    .page-header::after {
+      content: ''; position: absolute; bottom: -40px; left: 25%;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(167,139,250,0.07) 0%, transparent 65%);
+      border-radius: 50%;
+    }
+    .brand {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 3px; color: var(--accent); opacity: 0.75; margin-bottom: 6px;
+    }
+    h1 {
+      font-size: 26px; font-weight: 800; margin: 0 0 10px;
+      background: linear-gradient(90deg, #93c5fd, #c4b5fd);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      position: relative;
+    }
+
+    /* ── Layout ── */
+    .wrap { max-width: 1020px; margin: 0 auto; padding: 0 16px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+      padding: 22px; margin-top: 16px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--border-accent); }
+    .card:last-child { margin-bottom: 40px; }
+
+    /* ── Section headings ── */
+    h2 {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--accent); margin: 0 0 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    h2::before {
+      content: ''; display: inline-block; width: 3px; height: 14px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 2px;
+    }
+
+    /* ── Form grid ── */
+    .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
     .field { grid-column: span 3; }
     .field.w2 { grid-column: span 2; }
     .field.w4 { grid-column: span 4; }
     .field.w6 { grid-column: span 6; }
-    label { display:block; font-weight: 650; font-size: 12px; margin-bottom: 6px; }
-    input, select, button { width: 100%; padding: 10px; border:1px solid var(--border); border-radius: 10px; font-size: 14px; }
+    label {
+      display: block; font-weight: 600; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.7px;
+      color: var(--muted); margin-bottom: 7px;
+    }
+    input, select {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 10px; font-size: 14px;
+      background: var(--input-bg); color: var(--text); outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
     input[type="number"] { text-align: right; }
-    button { cursor: pointer; font-weight: 700; }
-    .btnrow { display:flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-    .btn { flex: 1; min-width: 180px; }
-    .out { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-    .kpi { border:1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--bg); }
-    .kpi .name { color: var(--muted); font-size: 12px; }
-    .kpi .val { font-size: 18px; font-weight: 800; margin-top: 6px; }
-    .kpi .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
-    table { width:100%; border-collapse: collapse; margin-top: 8px; }
-    td, th { border-bottom:1px solid var(--border); padding: 8px; font-size: 13px; }
-    th { text-align:left; color: var(--muted); font-weight: 700; }
-    .right { text-align:right; }
-    .pill { display:inline-block; padding: 2px 8px; border:1px solid var(--border); border-radius: 999px; font-size: 12px; color: var(--muted); background:white; }
-    .warn { color:#b45309; }
+    input:focus, select:focus {
+      border-color: rgba(96,165,250,0.5);
+      box-shadow: 0 0 0 3px rgba(96,165,250,0.1);
+    }
+    input:disabled { opacity: 0.35; cursor: not-allowed; }
+    select option { background: #0f1928; }
+
+    /* ── Buttons ── */
+    .btnrow { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .btn {
+      flex: 1; min-width: 160px; padding: 12px 16px; border-radius: 12px;
+      font-weight: 700; font-size: 14px; cursor: pointer;
+      transition: all 0.18s; border: 1px solid transparent;
+    }
+    .btn:first-child {
+      background: linear-gradient(135deg, #3b82f6, #6366f1); color: white;
+      border-color: rgba(99,102,241,0.4);
+      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+    }
+    .btn:first-child:hover {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      box-shadow: 0 4px 24px rgba(59,130,246,0.45); transform: translateY(-1px);
+    }
+    .btn:not(:first-child) {
+      background: rgba(255,255,255,0.05); color: var(--text); border-color: var(--border);
+    }
+    .btn:not(:first-child):hover { background: rgba(255,255,255,0.09); border-color: rgba(96,165,250,0.3); }
+
+    /* ── KPI boxes ── */
+    .out { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .kpi {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px; position: relative; overflow: hidden;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .kpi::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0.7;
+    }
+    .kpi:hover { background: rgba(96,165,250,0.03); border-color: rgba(96,165,250,0.2); }
+    .kpi .name { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; }
+    .kpi .val { font-size: 22px; font-weight: 800; margin-top: 8px; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .kpi .sub { color: var(--muted); font-size: 11px; margin-top: 5px; line-height: 1.5; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+    td, th { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    th { text-align: left; color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; }
+    td:first-child { color: var(--muted); }
+    .right { text-align: right; font-weight: 600; color: var(--text); }
+    tr:last-child td { border-bottom: none; font-weight: 700; color: var(--accent); }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ── Misc ── */
+    .muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .pill {
+      display: inline-flex; align-items: center; padding: 3px 10px;
+      border: 1px solid rgba(96,165,250,0.2); border-radius: 999px;
+      font-size: 11px; color: var(--accent); background: rgba(96,165,250,0.08);
+    }
+    .warn { color: var(--warn); }
+
     @media (max-width: 860px) {
       .field, .field.w2, .field.w4, .field.w6 { grid-column: span 12; }
       .out { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
+      .page-header { padding: 20px 16px 18px; }
     }
   </style>
 </head>
 <body>
-  <h1>Motor Bros – Vehicle Calculator</h1>
-  <div class="muted">Workflow: <span class="pill">Bank fees</span> are calculated on what you actually pay for the vehicle. Then <span class="pill">Customs / Excise / FX / VAT</span> are calculated on the declaration amount.</div>
+  <div class="page-header">
+    <div class="wrap">
+      <div class="brand">Motor Bros</div>
+      <h1>Vehicle Calculator</h1>
+      <div class="muted">Workflow: <span class="pill">Bank fees</span> are calculated on what you actually pay for the vehicle. Then <span class="pill">Customs / Excise / FX / VAT</span> are calculated on the declaration amount.</div>
+    </div>
+  </div>
+  <div class="wrap">
 
-  <div class="card" style="margin-top:12px;">
+  <div class="card">
     <h2>1) Bank Fees (what you pay the vendor)</h2>
     <div class="row">
       <div class="field w4">
@@ -103,7 +231,7 @@
     </div>
   </div>
 
-  <div class="card" style="margin-top:12px;">
+  <div class="card">
     <h2>2) Declaration (customs, excise, FX, VAT)</h2>
     <div class="row">
       <div class="field w4">
@@ -189,10 +317,12 @@
       <button class="btn" id="btnExport">Export Saved Deals (CSV)</button>
     </div>
 
-    <div class="muted" style="margin-top:10px;">
+    <div class="muted" style="margin-top:12px;">
       Saved deals are stored in your browser on this device. If you want shared saving for your whole team, we can connect this to a database (Supabase/SharePoint/Dataverse).
     </div>
   </div>
+
+  </div><!-- /.wrap -->
 
 <script>
 const EXCISE = {"Petrol": {"<=1600": 46.95, "1601-1799": 62.77, ">=1800": 62.77}, "Diesel": {"<=2000": 46.95, "2001-2500": 62.77, ">2500": 62.77}, "Hybrid": {"<=1600": 20, "1601-1799": 35, "1800-1999": 46.95, ">=2000": 62.77}, "Electric": {"NA": 10}};

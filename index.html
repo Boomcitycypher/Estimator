@@ -6,63 +6,143 @@
   <title>Motor Bros – Vehicle Price Estimator</title>
   <style>
     :root {
-      --bg: #0b1220;
-      --card: #111a2b;
-      --muted: #a7b1c2;
-      --text: #eef2ff;
+      --bg: #070e1a;
+      --card: #0f1928;
+      --muted: #8b95a8;
+      --text: #e8eeff;
       --accent: #60a5fa;
-      --input: #0f172a;
-      --border: rgba(255,255,255,0.10);
+      --accent2: #a78bfa;
+      --input: #080f1c;
+      --border: rgba(255,255,255,0.07);
+      --border-accent: rgba(96,165,250,0.25);
       --warn: #fbbf24;
+      --success: #34d399;
     }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
-    .wrap { max-width: 980px; margin: 24px auto; padding: 0 16px 60px; }
-    h1 { font-size: 22px; margin: 6px 0 4px; }
-    .sub { color: var(--muted); margin: 0 0 18px; }
-    .grid { display:grid; grid-template-columns: 1fr; gap: 14px; }
-    @media (min-width: 860px) {
-      .grid { grid-template-columns: 1.2fr 0.8fr; gap: 18px; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+    /* ── Header ── */
+    .page-header {
+      background: linear-gradient(135deg, #0d2040 0%, #0b1220 45%, #150d2e 100%);
+      border-bottom: 1px solid rgba(96,165,250,0.15);
+      padding: 28px 24px 22px;
+      position: relative; overflow: hidden;
     }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
-    .sectionTitle { font-weight: 700; margin: 0 0 10px; }
-    .formGrid { display:grid; grid-template-columns: 1fr; gap: 10px; }
-    @media (min-width: 640px) {
-      .formGrid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .page-header::before {
+      content: ''; position: absolute; top: -60px; right: -40px;
+      width: 280px; height: 280px;
+      background: radial-gradient(circle, rgba(96,165,250,0.1) 0%, transparent 65%);
+      border-radius: 50%;
     }
-    label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .page-header::after {
+      content: ''; position: absolute; bottom: -40px; left: 25%;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(167,139,250,0.07) 0%, transparent 65%);
+      border-radius: 50%;
+    }
+    .brand { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); opacity: 0.75; margin-bottom: 6px; }
+    h1 {
+      font-size: 26px; font-weight: 800; margin: 0 0 8px;
+      background: linear-gradient(90deg, #93c5fd, #c4b5fd);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .sub { color: var(--muted); margin: 0; font-size: 13px; line-height: 1.5; position: relative; }
+
+    /* ── Layout ── */
+    .wrap { max-width: 1020px; margin: 0 auto; padding: 20px 16px 60px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 860px) { .grid { grid-template-columns: 1.25fr 0.75fr; gap: 20px; } }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+      padding: 20px; box-shadow: 0 4px 32px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--border-accent); }
+    .sectionTitle {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--accent); margin: 0 0 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sectionTitle::before {
+      content: ''; display: inline-block; width: 3px; height: 14px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 2px;
+    }
+
+    /* ── Form ── */
+    .formGrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 640px) { .formGrid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+    label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 7px; }
     input, select {
-      width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px;
-      border: 1px solid var(--border); background: var(--input); color: var(--text);
-      outline: none;
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--input); color: var(--text); outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s; font-size: 14px;
     }
-    input:focus, select:focus { border-color: rgba(96,165,250,0.8); box-shadow: 0 0 0 4px rgba(96,165,250,0.15); }
-    .row { display:flex; gap: 10px; flex-wrap: wrap; }
+    input:focus, select:focus { border-color: rgba(96,165,250,0.5); box-shadow: 0 0 0 3px rgba(96,165,250,0.1); }
+    select option { background: #0f1928; }
+
+    /* ── Buttons ── */
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
     button {
-      cursor: pointer; border: 1px solid var(--border); background: rgba(96,165,250,0.15); color: var(--text);
-      padding: 10px 12px; border-radius: 12px; font-weight: 650;
+      cursor: pointer; border: 1px solid var(--border); color: var(--text);
+      padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 14px;
+      transition: all 0.18s;
     }
-    button:hover { background: rgba(96,165,250,0.25); }
-    button.secondary { background: transparent; }
-    .kpi { display:grid; grid-template-columns: 1fr; gap: 10px; }
-    .kpiBox { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
-    .kpiLabel { color: var(--muted); font-size: 12px; }
-    .kpiValue { font-size: 20px; font-weight: 800; margin-top: 4px; }
-    .small { color: var(--muted); font-size: 12px; }
-    table { width:100%; border-collapse: collapse; margin-top: 10px; }
-    td { padding: 8px 6px; border-bottom: 1px solid var(--border); }
+    #btnCalc {
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border-color: rgba(99,102,241,0.4); color: white;
+      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+    }
+    #btnCalc:hover { background: linear-gradient(135deg, #2563eb, #4f46e5); box-shadow: 0 4px 24px rgba(59,130,246,0.45); transform: translateY(-1px); }
+    button.secondary { background: rgba(255,255,255,0.05); }
+    button.secondary:hover { background: rgba(255,255,255,0.09); border-color: rgba(96,165,250,0.3); }
+
+    /* ── KPI boxes ── */
+    .kpi { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .kpiBox {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px 16px; position: relative; overflow: hidden;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .kpiBox::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0.6;
+    }
+    .kpiBox:hover { background: rgba(96,165,250,0.03); border-color: rgba(96,165,250,0.2); }
+    .kpiBox.green::before { background: linear-gradient(90deg, var(--success), #059669); }
+    .kpiBox.green .kpiValue { color: var(--success); }
+    .kpiLabel { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; }
+    .kpiValue { font-size: 22px; font-weight: 800; margin-top: 8px; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    /* ── Table ── */
+    .small { color: var(--muted); font-size: 12px; margin-top: 5px; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    td { padding: 9px 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
     td:first-child { color: var(--muted); }
-    .pill {
-      display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px;
-      border: 1px solid var(--border); color: var(--muted);
-    }
+    td:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ── Misc ── */
+    .pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 11px; border: 1px solid rgba(96,165,250,0.2); color: var(--accent); background: rgba(96,165,250,0.08); }
     .warn { color: var(--warn); }
+
+    @media (max-width: 640px) {
+      h1 { font-size: 22px; }
+      .page-header { padding: 20px 16px 18px; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Motor Bros – Vehicle Price Estimator</h1>
-    <p class="sub">Web form version of your <code>Motor Bros - Estimator-AI.xlsx</code> logic (duty lookup + landed cost + selling price + profit).</p>
+  <div class="page-header">
+    <div class="wrap" style="padding-bottom:0;">
+      <div class="brand">Motor Bros</div>
+      <h1>Vehicle Price Estimator</h1>
+      <p class="sub">Duty lookup · Landed cost · Selling price · Profit — based on your <code>Estimator-AI.xlsx</code> logic.</p>
+    </div>
+  </div>
 
+  <div class="wrap">
     <div class="grid">
       <div class="card">
         <div class="sectionTitle">Inputs</div>
@@ -188,7 +268,7 @@
             <div class="kpiValue" id="sellPrice">—</div>
             <div class="small">Uses your Markup %.</div>
           </div>
-          <div class="kpiBox">
+          <div class="kpiBox green">
             <div class="kpiLabel">Profit (BDS) / Margin</div>
             <div class="kpiValue" id="profit">—</div>
             <div class="small" id="margin">—</div>
@@ -207,7 +287,7 @@
         </table>
       </div>
     </div>
-  </div>
+  </div><!-- /.wrap -->
 
   <script>
     // Duty table copied from the workbook's "Import Duties " sheet (A2:C8)
