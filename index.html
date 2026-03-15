@@ -94,66 +94,66 @@
 
           <div>
             <label>Vendor Price (USD)</label>
-            <input id="vendorPrice" type="number" step="0.01" value="18500" />
+            <input id="vendorPrice" type="number" step="0.01" value="18500" min="0" />
           </div>
           <div>
             <label>Wire Fee (USD)</label>
-            <input id="wireFee" type="number" step="0.01" value="30" />
+            <input id="wireFee" type="number" step="0.01" value="30" min="0" />
           </div>
 
           <div>
             <label>Commission (USD)</label>
-            <input id="commission" type="number" step="0.01" value="95" />
+            <input id="commission" type="number" step="0.01" value="95" min="0" />
           </div>
           <div>
             <label>FX Fee (%)</label>
-            <input id="fxFeePct" type="number" step="0.01" value="2" />
+            <input id="fxFeePct" type="number" step="0.01" value="2" min="0" />
             <div class="small">Enter as percent (e.g., 2 for 2%).</div>
           </div>
 
           <div>
-            <label>USD→BDS Conversion</label>
-            <input id="usdToBds" type="number" step="0.0001" value="2.02" />
+            <label>Bank FX Rate (USD→BDS)</label>
+            <input id="usdToBds" type="number" step="0.0001" value="2.02" min="0" />
           </div>
           <div>
             <label>Declaration Price (USD)</label>
-            <input id="declarationUsd" type="number" step="0.01" value="3800" />
+            <input id="declarationUsd" type="number" step="0.01" value="3800" min="0" />
           </div>
 
           <div>
-            <label>Exchange Rate (BDS per USD)</label>
-            <input id="exchangeRate" type="number" step="0.0001" value="2" />
+            <label>Customs Exchange Rate (BDS per USD)</label>
+            <input id="exchangeRate" type="number" step="0.0001" value="2" min="0" />
           </div>
           <div>
             <label>VAT Rate (%)</label>
-            <input id="vatPct" type="number" step="0.01" value="17.5" />
+            <input id="vatPct" type="number" step="0.01" value="17.5" min="0" />
           </div>
 
           <div>
             <label>Processing Fee (BDS)</label>
-            <input id="processingFee" type="number" step="0.01" value="10" />
+            <input id="processingFee" type="number" step="0.01" value="10" min="0" />
           </div>
           <div>
             <label>Markup (%)</label>
-            <input id="markupPct" type="number" step="0.01" value="25" />
+            <input id="markupPct" type="number" step="0.01" value="25" min="0" />
           </div>
 
           <div>
             <label>Title/Registration (BDS)</label>
-            <input id="titleReg" type="number" step="0.01" value="750" />
+            <input id="titleReg" type="number" step="0.01" value="750" min="0" />
           </div>
           <div>
             <label>Repairs/Reconditioning (BDS)</label>
-            <input id="repairs" type="number" step="0.01" value="500" />
+            <input id="repairs" type="number" step="0.01" value="500" min="0" />
           </div>
 
           <div>
             <label>Detailing (BDS)</label>
-            <input id="detailing" type="number" step="0.01" value="200" />
+            <input id="detailing" type="number" step="0.01" value="200" min="0" />
           </div>
           <div>
             <label>Other Local Costs (BDS)</label>
-            <input id="otherLocal" type="number" step="0.01" value="500" />
+            <input id="otherLocal" type="number" step="0.01" value="500" min="0" />
           </div>
         </div>
 
@@ -167,8 +167,10 @@
         <p class="small" style="margin-top: 10px;">
           Notes: This form uses the same math as the spreadsheet:
           <span class="warn">Subtotal USD</span> = Vendor + Wire + Commission,
-          <span class="warn">Subtotal BDS</span> = SubtotalUSD × USD→BDS × (1 + FX%),
+          <span class="warn">Subtotal BDS</span> = SubtotalUSD × Bank FX Rate × (1 + FX%),
           duty/excise are looked up by Vehicle Type.
+          <span class="warn">Bank FX Rate</span> is what your bank charges for the transfer;
+          <span class="warn">Customs Exchange Rate</span> is the rate used on your customs declaration (may differ).
         </p>
       </div>
 
@@ -355,7 +357,8 @@
     function getSavedDeals() {
       try {
         return JSON.parse(localStorage.getItem("motorbros_deals") || "[]");
-      } catch {
+      } catch (e) {
+        console.warn("Could not read saved deals from localStorage:", e);
         return [];
       }
     }
