@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Motor Bros – Dealership Management</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --muted: #64748b;
+      --text: #0f172a;
+      --accent: #3b82f6;
+      --accent2: #6366f1;
+      --input: #f8fafc;
+      --border: #e2e8f0;
+      --border-accent: rgba(59,130,246,0.35);
+      --warn: #d97706;
+      --success: #059669;
+      --danger: #dc2626;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+    /* ── Header ── */
+    .page-header {
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #f5f3ff 100%);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 28px 24px 22px;
+      position: relative; overflow: hidden;
+    }
+    .page-header::before {
+      content: ''; position: absolute; top: -60px; right: -40px;
+      width: 280px; height: 280px;
+      background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 65%);
+      border-radius: 50%;
+    }
+    .page-header::after {
+      content: ''; position: absolute; bottom: -40px; left: 25%;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 65%);
+      border-radius: 50%;
+    }
+    .brand { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 6px; }
+    h1 {
+      font-size: 26px; font-weight: 800; margin: 0 0 8px;
+      background: linear-gradient(90deg, #2563eb, #7c3aed);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .sub { color: var(--muted); margin: 0; font-size: 13px; line-height: 1.5; position: relative; }
+    .header-nav { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; position: relative; }
+    .nav-btn {
+      padding: 7px 16px; border-radius: 10px; border: 1px solid var(--border);
+      background: white; color: var(--muted); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.18s; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .nav-btn:hover { border-color: var(--border-accent); color: var(--accent); }
+    .nav-btn.active { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+
+    /* ── Layout ── */
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+      padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06);
+      transition: border-color 0.2s, box-shadow 0.2s; margin-bottom: 16px;
+    }
+    .card:hover { border-color: var(--border-accent); box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 12px 32px rgba(59,130,246,0.1); }
+    .sectionTitle {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--accent); margin: 0 0 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sectionTitle::before {
+      content: ''; display: inline-block; width: 3px; height: 14px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 2px;
+    }
+
+    /* ── KPIs ── */
+    .kpiGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+    @media (min-width: 640px) { .kpiGrid { grid-template-columns: repeat(4, 1fr); } }
+    .kpiBox {
+      background: #f8fafc; border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px 16px; position: relative; overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .kpiBox::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .kpiBox.green::before { background: linear-gradient(90deg, #10b981, #059669); }
+    .kpiBox.orange::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .kpiBox.purple::before { background: linear-gradient(90deg, #8b5cf6, #6366f1); }
+    .kpiBox:hover { border-color: var(--border-accent); box-shadow: 0 4px 12px rgba(59,130,246,0.1); }
+    .kpiLabel { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; }
+    .kpiValue { font-size: 22px; font-weight: 800; margin-top: 6px; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .kpiBox.green .kpiValue { color: var(--success); }
+    .kpiBox.orange .kpiValue { color: var(--warn); }
+    .kpiBox.purple .kpiValue { color: #7c3aed; }
+
+    /* ── Form ── */
+    .formGrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 640px) { .formGrid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+    @media (min-width: 900px) { .formGrid.cols3 { grid-template-columns: 1fr 1fr 1fr; } }
+    label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 5px; }
+    input, select, textarea {
+      width: 100%; padding: 9px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--input); color: var(--text); outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s; font-size: 14px; font-family: inherit;
+    }
+    textarea { resize: vertical; min-height: 70px; }
+    input:focus, select:focus, textarea:focus { border-color: rgba(59,130,246,0.5); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+    /* ── Buttons ── */
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+    button {
+      cursor: pointer; border: 1px solid var(--border); color: var(--text);
+      padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 13px;
+      transition: all 0.18s; white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border-color: rgba(99,102,241,0.4); color: white;
+      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #2563eb, #4f46e5); box-shadow: 0 4px 24px rgba(59,130,246,0.45); transform: translateY(-1px); }
+    .btn-secondary { background: white; }
+    .btn-secondary:hover { border-color: var(--border-accent); color: var(--accent); }
+    .btn-danger { background: white; color: var(--danger); border-color: rgba(220,38,38,0.2); }
+    .btn-danger:hover { background: #fef2f2; border-color: rgba(220,38,38,0.4); }
+    .btn-success { background: linear-gradient(135deg, #10b981, #059669); border-color: transparent; color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+    .btn-success:hover { background: linear-gradient(135deg, #059669, #047857); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
+    thead th { background: #f8fafc; padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    tbody td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #fafbfd; }
+    .empty-row td { text-align: center; color: var(--muted); padding: 32px; font-size: 13px; }
+
+    /* ── Status badges ── */
+    .badge {
+      display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;
+    }
+    .badge-available { background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.2); }
+    .badge-sold { background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.2); }
+    .badge-hold { background: rgba(245,158,11,0.1); color: #d97706; border: 1px solid rgba(245,158,11,0.2); }
+    .badge-open { background: rgba(59,130,246,0.1); color: #2563eb; border: 1px solid rgba(59,130,246,0.2); }
+    .badge-closed { background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.2); }
+    .badge-lost { background: rgba(220,38,38,0.1); color: #dc2626; border: 1px solid rgba(220,38,38,0.2); }
+
+    /* ── Misc ── */
+    .small { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .section-flex { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .search-bar { max-width: 260px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.45);
+      backdrop-filter: blur(2px); z-index: 100; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 20px; padding: 28px; width: 100%; max-width: 560px;
+      max-height: 90vh; overflow-y: auto; margin: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+    }
+    .modal h2 { margin: 0 0 20px; font-size: 18px; font-weight: 800; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+    @media (max-width: 640px) { h1 { font-size: 22px; } .page-header { padding: 20px 16px 18px; } }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="wrap" style="padding-bottom:0;">
+    <div class="brand">Motor Bros</div>
+    <h1>Dealership Management</h1>
+    <p class="sub">Inventory · Customers · Sales — all your dealership data in one place.</p>
+    <nav class="header-nav">
+      <button class="nav-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="switchTab('inventory')">Inventory</button>
+      <button class="nav-btn" onclick="switchTab('customers')">Customers</button>
+      <button class="nav-btn" onclick="switchTab('sales')">Sales</button>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ═══════════════ DASHBOARD ═══════════════ -->
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="kpiGrid">
+      <div class="kpiBox">
+        <div class="kpiLabel">Total Inventory</div>
+        <div class="kpiValue" id="kpi-total-inv">0</div>
+      </div>
+      <div class="kpiBox green">
+        <div class="kpiLabel">Available</div>
+        <div class="kpiValue" id="kpi-available">0</div>
+      </div>
+      <div class="kpiBox orange">
+        <div class="kpiLabel">On Hold</div>
+        <div class="kpiValue" id="kpi-hold">0</div>
+      </div>
+      <div class="kpiBox purple">
+        <div class="kpiLabel">Sold</div>
+        <div class="kpiValue" id="kpi-sold">0</div>
+      </div>
+    </div>
+
+    <div class="kpiGrid">
+      <div class="kpiBox">
+        <div class="kpiLabel">Total Customers</div>
+        <div class="kpiValue" id="kpi-customers">0</div>
+      </div>
+      <div class="kpiBox green">
+        <div class="kpiLabel">Open Sales</div>
+        <div class="kpiValue" id="kpi-open-sales">0</div>
+      </div>
+      <div class="kpiBox green">
+        <div class="kpiLabel">Closed Sales</div>
+        <div class="kpiValue" id="kpi-closed-sales">0</div>
+      </div>
+      <div class="kpiBox purple">
+        <div class="kpiLabel">Total Revenue (BDS)</div>
+        <div class="kpiValue" id="kpi-revenue">$0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Recent Activity</div>
+      <div id="recent-activity"><p class="small">No activity yet. Start by adding vehicles and customers.</p></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ INVENTORY ═══════════════ -->
+  <div id="tab-inventory" class="tab-content">
+    <div class="section-flex">
+      <div>
+        <div class="sectionTitle" style="margin-bottom:4px;">Vehicle Inventory</div>
+        <p class="small" style="margin:0;">Track all vehicles in stock.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input class="search-bar" type="search" id="inv-search" placeholder="Search by make, model, VIN…" oninput="renderInventory()" />
+        <button class="btn-primary" onclick="openModal('inv')">+ Add Vehicle</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>VIN / Chassis</th>
+            <th>Vehicle</th>
+            <th>Year</th>
+            <th>Colour</th>
+            <th>Cost (BDS)</th>
+            <th>Asking (BDS)</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="inv-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════ CUSTOMERS ═══════════════ -->
+  <div id="tab-customers" class="tab-content">
+    <div class="section-flex">
+      <div>
+        <div class="sectionTitle" style="margin-bottom:4px;">Customers</div>
+        <p class="small" style="margin:0;">Manage your customer base and leads.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input class="search-bar" type="search" id="cust-search" placeholder="Search by name, phone, email…" oninput="renderCustomers()" />
+        <button class="btn-primary" onclick="openModal('cust')">+ Add Customer</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Interest</th>
+            <th>Notes</th>
+            <th>Added</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="cust-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SALES ═══════════════ -->
+  <div id="tab-sales" class="tab-content">
+    <div class="section-flex">
+      <div>
+        <div class="sectionTitle" style="margin-bottom:4px;">Sales</div>
+        <p class="small" style="margin:0;">Track deals from lead to close.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input class="search-bar" type="search" id="sale-search" placeholder="Search by customer, vehicle…" oninput="renderSales()" />
+        <button class="btn-primary" onclick="openModal('sale')">+ New Sale</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Vehicle</th>
+            <th>Sale Price (BDS)</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="sale-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /.wrap -->
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- Inventory modal -->
+<div class="modal-overlay" id="modal-inv">
+  <div class="modal">
+    <h2 id="inv-modal-title">Add Vehicle</h2>
+    <div class="formGrid cols3">
+      <div>
+        <label>VIN / Chassis</label>
+        <input id="f-vin" type="text" placeholder="Optional" />
+      </div>
+      <div>
+        <label>Make</label>
+        <input id="f-make" type="text" placeholder="e.g. Nissan" />
+      </div>
+      <div>
+        <label>Model</label>
+        <input id="f-model" type="text" placeholder="e.g. Kicks" />
+      </div>
+      <div>
+        <label>Year</label>
+        <input id="f-year" type="number" step="1" placeholder="2023" />
+      </div>
+      <div>
+        <label>Colour</label>
+        <input id="f-colour" type="text" placeholder="e.g. Silver" />
+      </div>
+      <div>
+        <label>Mileage (km)</label>
+        <input id="f-mileage" type="number" step="1" placeholder="0" min="0" />
+      </div>
+      <div>
+        <label>Cost Price (BDS)</label>
+        <input id="f-cost" type="number" step="0.01" placeholder="0.00" min="0" />
+      </div>
+      <div>
+        <label>Asking Price (BDS)</label>
+        <input id="f-asking" type="number" step="0.01" placeholder="0.00" min="0" />
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="f-status">
+          <option value="available">Available</option>
+          <option value="hold">On Hold</option>
+          <option value="sold">Sold</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label>Notes</label>
+        <textarea id="f-notes" placeholder="Condition, features, history…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('inv')">Cancel</button>
+      <button class="btn-primary" onclick="saveVehicle()">Save Vehicle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Customer modal -->
+<div class="modal-overlay" id="modal-cust">
+  <div class="modal">
+    <h2 id="cust-modal-title">Add Customer</h2>
+    <div class="formGrid">
+      <div>
+        <label>First Name</label>
+        <input id="cf-first" type="text" placeholder="First name" />
+      </div>
+      <div>
+        <label>Last Name</label>
+        <input id="cf-last" type="text" placeholder="Last name" />
+      </div>
+      <div>
+        <label>Phone</label>
+        <input id="cf-phone" type="tel" placeholder="+1 246 xxx xxxx" />
+      </div>
+      <div>
+        <label>Email</label>
+        <input id="cf-email" type="email" placeholder="customer@email.com" />
+      </div>
+      <div style="grid-column:1/-1;">
+        <label>Interest / Looking For</label>
+        <input id="cf-interest" type="text" placeholder="e.g. SUV under $40,000 BDS" />
+      </div>
+      <div style="grid-column:1/-1;">
+        <label>Notes</label>
+        <textarea id="cf-notes" placeholder="Any additional notes…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('cust')">Cancel</button>
+      <button class="btn-primary" onclick="saveCustomer()">Save Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sale modal -->
+<div class="modal-overlay" id="modal-sale">
+  <div class="modal">
+    <h2 id="sale-modal-title">New Sale</h2>
+    <div class="formGrid">
+      <div>
+        <label>Customer</label>
+        <select id="sf-customer"></select>
+      </div>
+      <div>
+        <label>Vehicle</label>
+        <select id="sf-vehicle"></select>
+      </div>
+      <div>
+        <label>Sale Price (BDS)</label>
+        <input id="sf-price" type="number" step="0.01" placeholder="0.00" min="0" />
+      </div>
+      <div>
+        <label>Sale Date</label>
+        <input id="sf-date" type="date" />
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="sf-status">
+          <option value="open">Open</option>
+          <option value="closed">Closed / Won</option>
+          <option value="lost">Lost</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label>Notes</label>
+        <textarea id="sf-notes" placeholder="Deposit received, financing, conditions…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('sale')">Cancel</button>
+      <button class="btn-primary" onclick="saveSale()">Save Sale</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Storage helpers ──
+  const DB = {
+    get: (key) => { try { return JSON.parse(localStorage.getItem('mb_' + key) || '[]'); } catch(e) { return []; } },
+    set: (key, val) => localStorage.setItem('mb_' + key, JSON.stringify(val))
+  };
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function fmt(n) { return Number(n || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fmtDate(iso) { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  // ── Tabs ──
+  function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (name === 'dashboard') renderDashboard();
+    if (name === 'inventory') renderInventory();
+    if (name === 'customers') renderCustomers();
+    if (name === 'sales') renderSales();
+  }
+
+  // ── Modal helpers ──
+  let editingId = { inv: null, cust: null, sale: null };
+
+  function openModal(type, id) {
+    editingId[type] = id || null;
+    if (type === 'inv') openInvModal(id);
+    if (type === 'cust') openCustModal(id);
+    if (type === 'sale') openSaleModal(id);
+  }
+  function closeModal(type) {
+    document.getElementById('modal-' + type).classList.remove('open');
+  }
+
+  // ── INVENTORY ──
+  function openInvModal(id) {
+    const vehicles = DB.get('vehicles');
+    const v = id ? vehicles.find(x => x.id === id) : null;
+    document.getElementById('inv-modal-title').textContent = v ? 'Edit Vehicle' : 'Add Vehicle';
+    document.getElementById('f-vin').value = v?.vin || '';
+    document.getElementById('f-make').value = v?.make || '';
+    document.getElementById('f-model').value = v?.model || '';
+    document.getElementById('f-year').value = v?.year || '';
+    document.getElementById('f-colour').value = v?.colour || '';
+    document.getElementById('f-mileage').value = v?.mileage || '';
+    document.getElementById('f-cost').value = v?.cost || '';
+    document.getElementById('f-asking').value = v?.asking || '';
+    document.getElementById('f-status').value = v?.status || 'available';
+    document.getElementById('f-notes').value = v?.notes || '';
+    document.getElementById('modal-inv').classList.add('open');
+  }
+
+  function saveVehicle() {
+    const make = document.getElementById('f-make').value.trim();
+    const model = document.getElementById('f-model').value.trim();
+    if (!make || !model) { alert('Make and Model are required.'); return; }
+    const vehicles = DB.get('vehicles');
+    const record = {
+      id: editingId.inv || uid(),
+      vin: document.getElementById('f-vin').value.trim(),
+      make,
+      model,
+      year: document.getElementById('f-year').value.trim(),
+      colour: document.getElementById('f-colour').value.trim(),
+      mileage: Number(document.getElementById('f-mileage').value) || 0,
+      cost: Number(document.getElementById('f-cost').value) || 0,
+      asking: Number(document.getElementById('f-asking').value) || 0,
+      status: document.getElementById('f-status').value,
+      notes: document.getElementById('f-notes').value.trim(),
+      updatedAt: new Date().toISOString()
+    };
+    if (editingId.inv) {
+      const idx = vehicles.findIndex(x => x.id === editingId.inv);
+      if (idx >= 0) { record.createdAt = vehicles[idx].createdAt; vehicles[idx] = record; }
+    } else {
+      record.createdAt = record.updatedAt;
+      vehicles.unshift(record);
+      addActivity('Vehicle added: ' + make + ' ' + model + ' ' + (record.year || ''));
+    }
+    DB.set('vehicles', vehicles);
+    closeModal('inv');
+    renderInventory();
+    renderDashboard();
+  }
+
+  function deleteVehicle(id) {
+    if (!confirm('Delete this vehicle? This cannot be undone.')) return;
+    DB.set('vehicles', DB.get('vehicles').filter(x => x.id !== id));
+    renderInventory();
+    renderDashboard();
+  }
+
+  function renderInventory() {
+    const q = (document.getElementById('inv-search')?.value || '').toLowerCase();
+    let vehicles = DB.get('vehicles');
+    if (q) vehicles = vehicles.filter(v =>
+      [v.make, v.model, v.vin, v.colour, v.year].join(' ').toLowerCase().includes(q)
+    );
+    const tbody = document.getElementById('inv-tbody');
+    if (!tbody) return;
+    if (!vehicles.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No vehicles found. Click "+ Add Vehicle" to get started.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = vehicles.map(v => `
+      <tr>
+        <td><span style="font-family:monospace;font-size:12px;">${esc(v.vin) || '<span style="color:var(--muted)">—</span>'}</span></td>
+        <td><strong>${esc(v.make)} ${esc(v.model)}</strong></td>
+        <td>${esc(v.year) || '—'}</td>
+        <td>${esc(v.colour) || '—'}</td>
+        <td>$${fmt(v.cost)}</td>
+        <td>$${fmt(v.asking)}</td>
+        <td><span class="badge badge-${v.status}">${v.status}</span></td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-secondary btn-sm" onclick="openModal('inv','${v.id}')">Edit</button>
+            <button class="btn-danger btn-sm" onclick="deleteVehicle('${v.id}')">Del</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── CUSTOMERS ──
+  function openCustModal(id) {
+    const customers = DB.get('customers');
+    const c = id ? customers.find(x => x.id === id) : null;
+    document.getElementById('cust-modal-title').textContent = c ? 'Edit Customer' : 'Add Customer';
+    document.getElementById('cf-first').value = c?.first || '';
+    document.getElementById('cf-last').value = c?.last || '';
+    document.getElementById('cf-phone').value = c?.phone || '';
+    document.getElementById('cf-email').value = c?.email || '';
+    document.getElementById('cf-interest').value = c?.interest || '';
+    document.getElementById('cf-notes').value = c?.notes || '';
+    document.getElementById('modal-cust').classList.add('open');
+  }
+
+  function saveCustomer() {
+    const first = document.getElementById('cf-first').value.trim();
+    const last = document.getElementById('cf-last').value.trim();
+    if (!first && !last) { alert('Please enter at least a first or last name.'); return; }
+    const customers = DB.get('customers');
+    const record = {
+      id: editingId.cust || uid(),
+      first,
+      last,
+      phone: document.getElementById('cf-phone').value.trim(),
+      email: document.getElementById('cf-email').value.trim(),
+      interest: document.getElementById('cf-interest').value.trim(),
+      notes: document.getElementById('cf-notes').value.trim(),
+      updatedAt: new Date().toISOString()
+    };
+    if (editingId.cust) {
+      const idx = customers.findIndex(x => x.id === editingId.cust);
+      if (idx >= 0) { record.createdAt = customers[idx].createdAt; customers[idx] = record; }
+    } else {
+      record.createdAt = record.updatedAt;
+      customers.unshift(record);
+      addActivity('Customer added: ' + [first, last].filter(Boolean).join(' '));
+    }
+    DB.set('customers', customers);
+    closeModal('cust');
+    renderCustomers();
+    renderDashboard();
+  }
+
+  function deleteCustomer(id) {
+    if (!confirm('Delete this customer?')) return;
+    DB.set('customers', DB.get('customers').filter(x => x.id !== id));
+    renderCustomers();
+    renderDashboard();
+  }
+
+  function renderCustomers() {
+    const q = (document.getElementById('cust-search')?.value || '').toLowerCase();
+    let customers = DB.get('customers');
+    if (q) customers = customers.filter(c =>
+      [c.first, c.last, c.phone, c.email].join(' ').toLowerCase().includes(q)
+    );
+    const tbody = document.getElementById('cust-tbody');
+    if (!tbody) return;
+    if (!customers.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No customers found. Click "+ Add Customer" to get started.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = customers.map(c => `
+      <tr>
+        <td><strong>${esc(c.first)} ${esc(c.last)}</strong></td>
+        <td>${esc(c.phone) || '—'}</td>
+        <td><a href="mailto:${esc(c.email)}" style="color:var(--accent)">${esc(c.email) || '—'}</a></td>
+        <td>${esc(c.interest) || '—'}</td>
+        <td class="small">${esc(c.notes) || '—'}</td>
+        <td class="small">${fmtDate(c.createdAt)}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-secondary btn-sm" onclick="openModal('cust','${c.id}')">Edit</button>
+            <button class="btn-danger btn-sm" onclick="deleteCustomer('${c.id}')">Del</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── SALES ──
+  function openSaleModal(id) {
+    const sales = DB.get('sales');
+    const s = id ? sales.find(x => x.id === id) : null;
+    document.getElementById('sale-modal-title').textContent = s ? 'Edit Sale' : 'New Sale';
+
+    // populate customers dropdown
+    const custSel = document.getElementById('sf-customer');
+    custSel.innerHTML = '<option value="">— Select Customer —</option>';
+    DB.get('customers').forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = [c.first, c.last].filter(Boolean).join(' ');
+      if (s?.customerId === c.id) opt.selected = true;
+      custSel.appendChild(opt);
+    });
+
+    // populate vehicles dropdown
+    const vehSel = document.getElementById('sf-vehicle');
+    vehSel.innerHTML = '<option value="">— Select Vehicle —</option>';
+    DB.get('vehicles').forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = [v.year, v.make, v.model].filter(Boolean).join(' ');
+      if (s?.vehicleId === v.id) opt.selected = true;
+      vehSel.appendChild(opt);
+    });
+
+    document.getElementById('sf-price').value = s?.price || '';
+    document.getElementById('sf-date').value = s?.date || new Date().toISOString().slice(0, 10);
+    document.getElementById('sf-status').value = s?.status || 'open';
+    document.getElementById('sf-notes').value = s?.notes || '';
+    document.getElementById('modal-sale').classList.add('open');
+  }
+
+  function saveSale() {
+    const customerId = document.getElementById('sf-customer').value;
+    const vehicleId = document.getElementById('sf-vehicle').value;
+    if (!customerId) { alert('Please select a customer.'); return; }
+    if (!vehicleId) { alert('Please select a vehicle.'); return; }
+    const sales = DB.get('sales');
+    const status = document.getElementById('sf-status').value;
+    const record = {
+      id: editingId.sale || uid(),
+      customerId,
+      vehicleId,
+      price: Number(document.getElementById('sf-price').value) || 0,
+      date: document.getElementById('sf-date').value,
+      status,
+      notes: document.getElementById('sf-notes').value.trim(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // If closed, mark the vehicle as sold
+    if (status === 'closed') {
+      const vehicles = DB.get('vehicles');
+      const vIdx = vehicles.findIndex(x => x.id === vehicleId);
+      if (vIdx >= 0) { vehicles[vIdx].status = 'sold'; DB.set('vehicles', vehicles); }
+    }
+
+    if (editingId.sale) {
+      const idx = sales.findIndex(x => x.id === editingId.sale);
+      if (idx >= 0) { record.createdAt = sales[idx].createdAt; sales[idx] = record; }
+    } else {
+      record.createdAt = record.updatedAt;
+      sales.unshift(record);
+      const cust = DB.get('customers').find(x => x.id === customerId);
+      const veh = DB.get('vehicles').find(x => x.id === vehicleId);
+      const custName = cust ? [cust.first, cust.last].filter(Boolean).join(' ') : 'Unknown';
+      const vehName = veh ? [veh.year, veh.make, veh.model].filter(Boolean).join(' ') : 'Unknown';
+      addActivity('Sale opened: ' + custName + ' → ' + vehName);
+    }
+    DB.set('sales', sales);
+    closeModal('sale');
+    renderSales();
+    renderDashboard();
+  }
+
+  function deleteSale(id) {
+    if (!confirm('Delete this sale record?')) return;
+    DB.set('sales', DB.get('sales').filter(x => x.id !== id));
+    renderSales();
+    renderDashboard();
+  }
+
+  function renderSales() {
+    const q = (document.getElementById('sale-search')?.value || '').toLowerCase();
+    let sales = DB.get('sales');
+    const customers = DB.get('customers');
+    const vehicles = DB.get('vehicles');
+
+    const custName = (id) => { const c = customers.find(x => x.id === id); return c ? [c.first, c.last].filter(Boolean).join(' ') : '—'; };
+    const vehName = (id) => { const v = vehicles.find(x => x.id === id); return v ? [v.year, v.make, v.model].filter(Boolean).join(' ') : '—'; };
+
+    if (q) sales = sales.filter(s =>
+      [custName(s.customerId), vehName(s.vehicleId), s.status, s.notes].join(' ').toLowerCase().includes(q)
+    );
+
+    const tbody = document.getElementById('sale-tbody');
+    if (!tbody) return;
+    if (!sales.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No sales yet. Click "+ New Sale" to create one.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = sales.map(s => `
+      <tr>
+        <td class="small">${fmtDate(s.date)}</td>
+        <td><strong>${esc(custName(s.customerId))}</strong></td>
+        <td>${esc(vehName(s.vehicleId))}</td>
+        <td><strong>$${fmt(s.price)}</strong></td>
+        <td><span class="badge badge-${s.status}">${s.status}</span></td>
+        <td class="small">${esc(s.notes) || '—'}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-secondary btn-sm" onclick="openModal('sale','${s.id}')">Edit</button>
+            <button class="btn-danger btn-sm" onclick="deleteSale('${s.id}')">Del</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── DASHBOARD ──
+  function renderDashboard() {
+    const vehicles = DB.get('vehicles');
+    const customers = DB.get('customers');
+    const sales = DB.get('sales');
+
+    document.getElementById('kpi-total-inv').textContent = vehicles.length;
+    document.getElementById('kpi-available').textContent = vehicles.filter(v => v.status === 'available').length;
+    document.getElementById('kpi-hold').textContent = vehicles.filter(v => v.status === 'hold').length;
+    document.getElementById('kpi-sold').textContent = vehicles.filter(v => v.status === 'sold').length;
+    document.getElementById('kpi-customers').textContent = customers.length;
+    document.getElementById('kpi-open-sales').textContent = sales.filter(s => s.status === 'open').length;
+    document.getElementById('kpi-closed-sales').textContent = sales.filter(s => s.status === 'closed').length;
+
+    const revenue = sales.filter(s => s.status === 'closed').reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+    document.getElementById('kpi-revenue').textContent = '$' + fmt(revenue);
+
+    // Recent activity
+    const activity = DB.get('activity').slice(0, 8);
+    const el = document.getElementById('recent-activity');
+    if (!activity.length) {
+      el.innerHTML = '<p class="small">No activity yet. Start by adding vehicles and customers.</p>';
+    } else {
+      el.innerHTML = '<ul style="margin:0;padding:0;list-style:none;">' +
+        activity.map(a => `
+          <li style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;"></span>
+            <span style="flex:1;font-size:13px;">${esc(a.text)}</span>
+            <span class="small">${fmtDate(a.at)}</span>
+          </li>
+        `).join('') +
+      '</ul>';
+    }
+  }
+
+  function addActivity(text) {
+    const activity = DB.get('activity');
+    activity.unshift({ text, at: new Date().toISOString() });
+    DB.set('activity', activity.slice(0, 50));
+  }
+
+  // close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target === this) {
+        const type = this.id.replace('modal-', '');
+        closeModal(type);
+      }
+    });
+  });
+
+  // ── Init ──
+  renderDashboard();
+</script>
+</body>
+</html>
