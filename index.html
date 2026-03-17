@@ -240,6 +240,8 @@
           <button id="btnCalc">Calculate</button>
           <button id="btnSave" class="secondary">Save Deal (local)</button>
           <button id="btnExport" class="secondary">Export Saved Deals (CSV)</button>
+          <button id="btnImport" class="secondary">Import CSV</button>
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
           <span class="pill" id="savedCount">0 saved</span>
         </div>
 
@@ -496,12 +498,115 @@
       URL.revokeObjectURL(url);
     }
 
+    function importCSV() {
+      $("csvFileInput").click();
+    }
+
+    function handleCSVImport(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) { alert("CSV appears empty or has no data rows."); return; }
+
+        const headers = lines[0].split(",").map(h => h.replace(/^"|"$/g, "").trim());
+
+        // Expected headers from our export format
+        const requiredHeaders = ["savedAt","make","model","year","vehicleType","vendorPriceUSD","landedCost","sellPrice","profit","margin"];
+        const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+        if (missingHeaders.length > 0) {
+          alert("CSV format not recognised. Missing columns: " + missingHeaders.join(", ") + ".\nPlease use a CSV exported from this tool.");
+          return;
+        }
+
+        function parseCSVLine(line) {
+          const result = [];
+          let inQuotes = false, val = "";
+          for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+              if (inQuotes && line[i+1] === '"') { val += '"'; i++; }
+              else { inQuotes = !inQuotes; }
+            } else if (ch === "," && !inQuotes) {
+              result.push(val); val = "";
+            } else {
+              val += ch;
+            }
+          }
+          result.push(val);
+          return result;
+        }
+
+        const idx = (name) => headers.indexOf(name);
+        const imported = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = parseCSVLine(lines[i]);
+          if (cols.length < headers.length) continue;
+          const get = (name) => cols[idx(name)] ?? "";
+          const num = (name) => parseFloat(get(name)) || 0;
+
+          imported.push({
+            savedAt: get("savedAt"),
+            vin: get("vin"),
+            make: get("make"),
+            model: get("model"),
+            year: get("year"),
+            vehicleType: get("vehicleType"),
+            inputs: {
+              vendorPrice: num("vendorPriceUSD"),
+              wireFee: num("wireFeeUSD"),
+              commission: num("commissionUSD"),
+              fxFee: num("fxFee"),
+              usdToBds: num("usdToBds"),
+              declarationUsd: num("declarationUsd"),
+              exchangeRate: num("exchangeRate"),
+              vatRate: num("vatRate"),
+              processingFee: num("processingFee"),
+              titleReg: num("titleReg"),
+              repairs: num("repairs"),
+              detailing: num("detailing"),
+              otherLocal: num("otherLocal"),
+              markup: num("markup")
+            },
+            outputs: {
+              subtotalUsd: num("subtotalUsd"),
+              subtotalBds: num("subtotalBds"),
+              customsValue: num("customsValue"),
+              importDuty: num("importDuty"),
+              exciseTax: num("exciseTax"),
+              vat: num("vat"),
+              dutiesTotal: num("dutiesTotal"),
+              localCosts: num("localCosts"),
+              landedCost: num("landedCost"),
+              sellPrice: num("sellPrice"),
+              profit: num("profit"),
+              margin: num("margin")
+            }
+          });
+        }
+
+        if (!imported.length) { alert("No valid rows found in the CSV."); return; }
+
+        const existing = getSavedDeals();
+        const existingSavedAts = new Set(existing.map(d => d.savedAt));
+        const newDeals = imported.filter(d => !existingSavedAts.has(d.savedAt));
+        const merged = [...newDeals, ...existing];
+        setSavedDeals(merged);
+        alert("Imported " + newDeals.length + " new deal(s). " + (imported.length - newDeals.length) + " duplicate(s) skipped. Total: " + merged.length + ".");
+      };
+      reader.readAsText(file);
+    }
+
     // Wire up
     loadDutyDropdown();
     setSavedDeals(getSavedDeals());
     $("btnCalc").addEventListener("click", () => calculate());
     $("btnSave").addEventListener("click", () => saveDeal());
     $("btnExport").addEventListener("click", () => exportCSV());
+    $("btnImport").addEventListener("click", () => importCSV());
+    $("csvFileInput").addEventListener("change", (e) => { handleCSVImport(e.target.files[0]); e.target.value = ""; });
     $("vehicleType").addEventListener("change", () => calculate());
 
     // auto-calc once on load

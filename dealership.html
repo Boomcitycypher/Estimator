@@ -188,6 +188,7 @@
       <button class="nav-btn" onclick="switchTab('inventory')">Inventory</button>
       <button class="nav-btn" onclick="switchTab('customers')">Customers</button>
       <button class="nav-btn" onclick="switchTab('sales')">Sales</button>
+      <button class="nav-btn" onclick="switchTab('data')">Data</button>
     </nav>
   </div>
 </div>
@@ -249,6 +250,9 @@
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <input class="search-bar" type="search" id="inv-search" placeholder="Search by make, model, VIN…" oninput="renderInventory()" />
+        <button class="btn-secondary" onclick="exportInventoryCSV()">Export CSV</button>
+        <button class="btn-secondary" onclick="document.getElementById('inv-csv-input').click()">Import CSV</button>
+        <input type="file" id="inv-csv-input" accept=".csv" style="display:none;" onchange="importInventoryCSV(event)" />
         <button class="btn-primary" onclick="openModal('inv')">+ Add Vehicle</button>
       </div>
     </div>
@@ -331,6 +335,30 @@
         </thead>
         <tbody id="sale-tbody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════ DATA ═══════════════ -->
+  <div id="tab-data" class="tab-content">
+    <div class="card">
+      <div class="sectionTitle">Backup &amp; Restore</div>
+      <p class="small" style="margin:0 0 16px;">Export all your dealership data as a JSON backup file, or restore from a previous backup.</p>
+      <div class="row" style="margin-top:0;">
+        <button class="btn-success" onclick="exportBackup()">Export Full Backup (JSON)</button>
+        <button class="btn-secondary" onclick="document.getElementById('restore-input').click()">Restore from Backup</button>
+        <input type="file" id="restore-input" accept=".json" style="display:none;" onchange="importBackup(event)" />
+      </div>
+      <p class="small" style="margin-top:12px;color:var(--warn);">Restoring a backup will <strong>overwrite</strong> all current data. This cannot be undone.</p>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Import Customers from CSV</div>
+      <p class="small" style="margin:0 0 12px;">Upload a CSV with columns: <code>first, last, phone, email, interest, notes</code>. The header row is required.</p>
+      <div class="row" style="margin-top:0;">
+        <button class="btn-secondary" onclick="exportCustomersCSV()">Export Customers CSV</button>
+        <button class="btn-primary" onclick="document.getElementById('cust-csv-input').click()">Import Customers CSV</button>
+        <input type="file" id="cust-csv-input" accept=".csv" style="display:none;" onchange="importCustomersCSV(event)" />
+      </div>
     </div>
   </div>
 
@@ -840,6 +868,183 @@
     const activity = DB.get('activity');
     activity.unshift({ text, at: new Date().toISOString() });
     DB.set('activity', activity.slice(0, 50));
+  }
+
+  // ── CSV helpers ──
+  function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return { headers: [], rows: [] };
+    const headers = parseLine(lines[0]);
+    const rows = lines.slice(1).map(parseLine).filter(r => r.length >= 2);
+    return { headers, rows };
+  }
+
+  function parseLine(line) {
+    const result = [];
+    let inQuotes = false, val = "";
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i+1] === '"') { val += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (ch === ',' && !inQuotes) {
+        result.push(val.trim()); val = "";
+      } else {
+        val += ch;
+      }
+    }
+    result.push(val.trim());
+    return result;
+  }
+
+  function toCSV(rows, headers) {
+    const escVal = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replaceAll('"', '""') + '"' : s; };
+    return [headers.join(','), ...rows.map(r => headers.map(h => escVal(r[h])).join(','))].join('\n');
+  }
+
+  function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── Inventory CSV export/import ──
+  function exportInventoryCSV() {
+    const vehicles = DB.get('vehicles');
+    if (!vehicles.length) { alert('No vehicles to export.'); return; }
+    const headers = ['vin','make','model','year','colour','mileage','cost','asking','status','notes'];
+    downloadFile(toCSV(vehicles, headers), 'mb_vehicles.csv', 'text/csv;charset=utf-8');
+  }
+
+  function importInventoryCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const { headers, rows } = parseCSV(e.target.result);
+      if (!headers.includes('make') || !headers.includes('model')) {
+        alert('CSV must have at least "make" and "model" columns.');
+        return;
+      }
+      const idx = (name) => headers.indexOf(name);
+      const vehicles = DB.get('vehicles');
+      let added = 0;
+      rows.forEach(cols => {
+        const get = (name) => (idx(name) >= 0 ? cols[idx(name)] : '') || '';
+        const make = get('make'), model = get('model');
+        if (!make && !model) return;
+        vehicles.unshift({
+          id: uid(),
+          vin: get('vin'),
+          make,
+          model,
+          year: get('year'),
+          colour: get('colour'),
+          mileage: Number(get('mileage')) || 0,
+          cost: Number(get('cost')) || 0,
+          asking: Number(get('asking')) || 0,
+          status: get('status') || 'available',
+          notes: get('notes'),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        added++;
+      });
+      DB.set('vehicles', vehicles);
+      addActivity('Imported ' + added + ' vehicle(s) from CSV');
+      renderInventory();
+      renderDashboard();
+      alert('Imported ' + added + ' vehicle(s) successfully.');
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  // ── Customers CSV export/import ──
+  function exportCustomersCSV() {
+    const customers = DB.get('customers');
+    if (!customers.length) { alert('No customers to export.'); return; }
+    const headers = ['first','last','phone','email','interest','notes'];
+    downloadFile(toCSV(customers, headers), 'mb_customers.csv', 'text/csv;charset=utf-8');
+  }
+
+  function importCustomersCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const { headers, rows } = parseCSV(e.target.result);
+      if (!headers.includes('first') && !headers.includes('last')) {
+        alert('CSV must have at least a "first" or "last" column.');
+        return;
+      }
+      const idx = (name) => headers.indexOf(name);
+      const customers = DB.get('customers');
+      let added = 0;
+      rows.forEach(cols => {
+        const get = (name) => (idx(name) >= 0 ? cols[idx(name)] : '') || '';
+        const first = get('first'), last = get('last');
+        if (!first && !last) return;
+        customers.unshift({
+          id: uid(),
+          first,
+          last,
+          phone: get('phone'),
+          email: get('email'),
+          interest: get('interest'),
+          notes: get('notes'),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        added++;
+      });
+      DB.set('customers', customers);
+      addActivity('Imported ' + added + ' customer(s) from CSV');
+      renderCustomers();
+      renderDashboard();
+      alert('Imported ' + added + ' customer(s) successfully.');
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  // ── Full backup / restore ──
+  function exportBackup() {
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      vehicles: DB.get('vehicles'),
+      customers: DB.get('customers'),
+      sales: DB.get('sales'),
+      activity: DB.get('activity')
+    };
+    downloadFile(JSON.stringify(backup, null, 2), 'mb_backup_' + new Date().toISOString().slice(0,10) + '.json', 'application/json');
+  }
+
+  function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!confirm('This will overwrite all current data with the backup. Are you sure?')) { event.target.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      let backup;
+      try { backup = JSON.parse(e.target.result); }
+      catch { alert('Invalid JSON file. Please use a backup exported from this app.'); return; }
+      if (!backup.vehicles || !backup.customers || !backup.sales) {
+        alert('Backup file is missing required data sections (vehicles, customers, sales).');
+        return;
+      }
+      DB.set('vehicles', backup.vehicles || []);
+      DB.set('customers', backup.customers || []);
+      DB.set('sales', backup.sales || []);
+      DB.set('activity', backup.activity || []);
+      renderDashboard();
+      alert('Backup restored successfully. Exported: ' + (backup.exportedAt || 'unknown date'));
+    };
+    reader.readAsText(file);
+    event.target.value = '';
   }
 
   // close modals on overlay click
