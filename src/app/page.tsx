@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Vehicle, Lead } from '@/lib/sheets';
+import type { Vehicle, Lead } from '@/lib/sheets';
 import { formatBDS } from '@/lib/constants';
 
 interface DashboardData {

@@ -6,7 +6,7 @@ import { z } from 'zod';
 import FormWrapper from '@/components/FormWrapper';
 import SuccessMessage from '@/components/SuccessMessage';
 import Spinner from '@/components/Spinner';
-import { Vehicle } from '@/lib/sheets';
+import type { Vehicle } from '@/lib/sheets';
 import { PAYMENT_METHODS, RECEIVING_ACCOUNTS, PAYMENT_TYPES, formatBDS, today } from '@/lib/constants';
 
 const schema = z.object({
