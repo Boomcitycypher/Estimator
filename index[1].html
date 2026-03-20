@@ -1,0 +1,497 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Motor Bros – Vehicle Calculator</title>
+  <style>
+    :root { --border:#e5e7eb; --muted:#6b7280; --bg:#f9fafb; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 980px; margin: 22px auto; padding: 0 14px; color:#111827; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    h2 { font-size: 16px; margin: 18px 0 8px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .card { border:1px solid var(--border); border-radius: 14px; padding: 14px; background: white; }
+    .row { display:grid; grid-template-columns: repeat(12, 1fr); gap: 10px; }
+    .field { grid-column: span 3; }
+    .field.w2 { grid-column: span 2; }
+    .field.w4 { grid-column: span 4; }
+    .field.w6 { grid-column: span 6; }
+    label { display:block; font-weight: 650; font-size: 12px; margin-bottom: 6px; }
+    input, select, button { width: 100%; padding: 10px; border:1px solid var(--border); border-radius: 10px; font-size: 14px; }
+    input[type="number"] { text-align: right; }
+    button { cursor: pointer; font-weight: 700; }
+    .btnrow { display:flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .btn { flex: 1; min-width: 180px; }
+    .out { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .kpi { border:1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--bg); }
+    .kpi .name { color: var(--muted); font-size: 12px; }
+    .kpi .val { font-size: 18px; font-weight: 800; margin-top: 6px; }
+    .kpi .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    table { width:100%; border-collapse: collapse; margin-top: 8px; }
+    td, th { border-bottom:1px solid var(--border); padding: 8px; font-size: 13px; }
+    th { text-align:left; color: var(--muted); font-weight: 700; }
+    .right { text-align:right; }
+    .pill { display:inline-block; padding: 2px 8px; border:1px solid var(--border); border-radius: 999px; font-size: 12px; color: var(--muted); background:white; }
+    .warn { color:#b45309; }
+    @media (max-width: 860px) {
+      .field, .field.w2, .field.w4, .field.w6 { grid-column: span 12; }
+      .out { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Motor Bros – Vehicle Calculator</h1>
+  <div class="muted">Workflow: <span class="pill">Bank fees</span> are calculated on what you actually pay for the vehicle. Then <span class="pill">Customs / Excise / FX / VAT</span> are calculated on the declaration amount.</div>
+
+  <div class="card" style="margin-top:12px;">
+    <h2>1) Bank Fees (what you pay the vendor)</h2>
+    <div class="row">
+      <div class="field w4">
+        <label>Vendor Price (USD)</label>
+        <input id="vendor_usd" type="number" step="0.01" value="0">
+      </div>
+      <div class="field w4">
+        <label>1st Payment (USD)</label>
+        <input id="pmt1_usd" type="number" step="0.01" value="0">
+      </div>
+      <div class="field w4">
+        <label>2nd Payment (USD) (auto)</label>
+        <input id="pmt2_usd" type="number" step="0.01" value="0" disabled>
+      </div>
+
+      <div class="field w4">
+        <label>Wire Fee per Payment (USD)</label>
+        <input id="wire_usd" type="number" step="0.01" value="0">
+      </div>
+      <div class="field w4">
+        <label>USD→BDS Conversion Rate</label>
+        <input id="bank_fxrate" type="number" step="0.00001" value="2.02768">
+      </div>
+      <div class="field w4">
+        <label>Bank FX Fee (%)</label>
+        <input id="bank_fx_pct" type="number" step="0.01" value="2">
+      </div>
+
+      <div class="field w4">
+        <label>Bank Fixed Fee per Payment (BDS)</label>
+        <input id="bank_fixed_bds" type="number" step="0.01" value="105">
+      </div>
+      <div class="field w4">
+        <label># of Payments</label>
+        <select id="num_pmts">
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+        </select>
+      </div>
+      <div class="field w4">
+        <label>Notes (optional)</label>
+        <input id="notes" type="text" placeholder="VIN / Stock # / anything">
+      </div>
+    </div>
+
+    <div class="out">
+      <div class="kpi">
+        <div class="name">Total Paid (BDS) incl. bank fees</div>
+        <div class="val" id="bank_total_bds">$0</div>
+        <div class="sub">This is what actually leaves your account to pay the vehicle.</div>
+      </div>
+      <div class="kpi">
+        <div class="name">Estimated Bank Fees (BDS)</div>
+        <div class="val" id="bank_fees_bds">$0</div>
+        <div class="sub">Difference vs straight conversion (no FX fee/fixed fees).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h2>2) Declaration (customs, excise, FX, VAT)</h2>
+    <div class="row">
+      <div class="field w4">
+        <label>Declared Price (USD)</label>
+        <input id="decl_usd" type="number" step="0.01" value="0">
+      </div>
+      <div class="field w4">
+        <label>Declaration Exchange Rate (USD→BDS)</label>
+        <input id="decl_fxrate" type="number" step="0.00001" value="2">
+      </div>
+      <div class="field w4">
+        <label>Declaration FX Fee (%)</label>
+        <input id="decl_fx_pct" type="number" step="0.01" value="0">
+      </div>
+
+      <div class="field w4">
+        <label>Freight (USD)</label>
+        <input id="freight_usd" type="number" step="0.01" value="0">
+      </div>
+      <div class="field w4">
+        <label>Body Type</label>
+        <select id="body_type">
+          <option value="Car" selected>Car</option>
+          <option value="Pickup">Pickup</option>
+        </select>
+      </div>
+      <div class="field w4">
+        <label>Engine Type</label>
+        <select id="engine_type"></select>
+      </div>
+
+      <div class="field w4">
+        <label>Engine CC Bracket</label>
+        <select id="cc_bracket"></select>
+      </div>
+      <div class="field w4">
+        <label>VAT (%)</label>
+        <input id="vat_pct" type="number" step="0.01" value="17.5">
+      </div>
+      <div class="field w4">
+        <label>Processing Fee (BDS)</label>
+        <input id="proc_fee" type="number" step="0.01" value="10">
+      </div>
+
+      <div class="field w4">
+        <label>Car Import Duty (%)</label>
+        <input id="car_duty" type="number" step="0.01" value="45">
+      </div>
+      <div class="field w4">
+        <label>Hybrid Discount (points)</label>
+        <input id="hyb_disc" type="number" step="0.01" value="10">
+      </div>
+      <div class="field w4">
+        <label>Pickup Import Duty (%)</label>
+        <input id="pickup_duty" type="number" step="0.01" value="10">
+      </div>
+    </div>
+
+    <div class="out">
+      <div class="kpi">
+        <div class="name">Total Duties & Fees (BDS)</div>
+        <div class="val" id="duties_total">$0</div>
+        <div class="sub" id="duties_sub">Import Duty + Excise + VAT + Processing</div>
+      </div>
+      <div class="kpi">
+        <div class="name">Total Declaration Cost (BDS)</div>
+        <div class="val" id="decl_total">$0</div>
+        <div class="sub">Customs Value + Duties & Fees</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Line</th><th class="right">Amount (BDS)</th></tr>
+      </thead>
+      <tbody id="breakdown"></tbody>
+    </table>
+
+    <div class="btnrow">
+      <button class="btn" onclick="calculateAll()">Calculate</button>
+      <button class="btn" onclick="resetForm()">Reset</button>
+      <button class="btn" onclick="saveDeal()">Save Deal (local)</button>
+      <button class="btn" onclick="exportDeals()">Export Saved Deals (CSV)</button>
+    </div>
+
+    <div class="muted" style="margin-top:10px;">
+      Saved deals are stored in your browser on this device. If you want shared saving for your whole team, we can connect this to a database (Supabase/SharePoint/Dataverse).
+    </div>
+  </div>
+
+<script>
+const EXCISE = {"Petrol": {"<=1600": 46.95, "1601-1799": 62.77, ">=1800": 62.77}, "Diesel": {"<=2000": 46.95, "2001-2500": 62.77, ">2500": 62.77}, "Hybrid": {"<=1600": 20, "1601-1799": 35, "1800-1999": 46.95, ">=2000": 62.77}, "Electric": {"NA": 10}};
+
+function money(n) {
+  const v = Number(n || 0);
+  return v.toLocaleString(undefined, { style: "currency", currency: "BBD" });
+}
+
+function num(id) {
+  const el = document.getElementById(id);
+  const v = el ? el.value : 0;
+  const x = Number(v);
+  return Number.isFinite(x) ? x : 0;
+}
+
+function setText(id, txt) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = txt;
+}
+
+function populateEngines() {
+  const engineSel = document.getElementById("engine_type");
+  engineSel.innerHTML = "";
+  Object.keys(EXCISE).forEach(k => {
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = k;
+    engineSel.appendChild(opt);
+  });
+  engineSel.value = "Petrol";
+  engineSel.addEventListener("change", populateCCs);
+  populateCCs();
+}
+
+function populateCCs() {
+  const engine = document.getElementById("engine_type").value;
+  const ccSel = document.getElementById("cc_bracket");
+  ccSel.innerHTML = "";
+  Object.keys(EXCISE[engine]).forEach(k => {
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = k;
+    ccSel.appendChild(opt);
+  });
+  ccSel.selectedIndex = 0;
+}
+
+function calcBank() {
+  const vendor = num("vendor_usd");
+  const pmt1 = num("pmt1_usd");
+  const numPmts = Number(document.getElementById("num_pmts").value || 2);
+  const pmt2 = Math.max(vendor - pmt1, 0);
+  document.getElementById("pmt2_usd").value = pmt2.toFixed(2);
+
+  const wire = num("wire_usd");
+  const rate = num("bank_fxrate");
+  const fxPct = num("bank_fx_pct")/100;
+  const fixed = num("bank_fixed_bds");
+
+  const pmts = (numPmts === 1) ? [vendor] : [pmt1, pmt2];
+
+  let totalBds = 0;
+  let baseBds = 0;
+  pmts.forEach(amtUsd => {
+    const usdWithWire = amtUsd + wire;
+    const converted = usdWithWire * rate;
+    baseBds += converted;
+    const afterFx = converted * (1 + fxPct);
+    const afterFixed = afterFx + fixed;
+    totalBds += afterFixed;
+  });
+
+  const fees = totalBds - baseBds;
+  setText("bank_total_bds", money(totalBds));
+  setText("bank_fees_bds", money(fees));
+  return { totalBds, feesBds: fees };
+}
+
+function importDutyRate() {
+  const body = document.getElementById("body_type").value;
+  const engine = document.getElementById("engine_type").value;
+  const carDuty = num("car_duty");
+  const pickupDuty = num("pickup_duty");
+  const hybDisc = num("hyb_disc");
+
+  if (body === "Pickup") return pickupDuty/100;
+  if (engine === "Electric") return 0;
+  if (engine === "Hybrid") return Math.max((carDuty - hybDisc), 0)/100;
+  return carDuty/100;
+}
+
+function exciseRate() {
+  const engine = document.getElementById("engine_type").value;
+  const cc = document.getElementById("cc_bracket").value;
+  const pct = (EXCISE[engine] && EXCISE[engine][cc] != null) ? EXCISE[engine][cc] : 0;
+  return pct/100;
+}
+
+function calcDeclaration() {
+  const declaredUsd = num("decl_usd");
+  const rate = num("decl_fxrate");
+  const fxPct = num("decl_fx_pct")/100;
+  const freightUsd = num("freight_usd");
+
+  // Apply FX fee to the declaration conversion (per your workflow)
+  const declaredBds = declaredUsd * rate * (1 + fxPct);
+  const freightBds = freightUsd * rate * (1 + fxPct);
+
+  const customsValue = (declaredBds > 0) ? (declaredBds + freightBds) : 0;
+
+  const idr = importDutyRate();
+  const importDuty = customsValue * idr;
+
+  const excR = exciseRate();
+  const exciseBase = customsValue + importDuty;
+  const excise = exciseBase * excR;
+
+  const vatPct = num("vat_pct")/100;
+  const vatBase = exciseBase + excise;
+  const vat = vatBase * vatPct;
+
+  const proc = (customsValue > 0) ? num("proc_fee") : 0;
+
+  const dutiesTotal = importDuty + excise + vat + proc;
+  const declTotal = customsValue + dutiesTotal;
+
+  return {
+    declaredBds, freightBds, customsValue,
+    importDutyRate: idr, importDuty,
+    exciseRate: excR, excise,
+    vatPct, vat,
+    proc,
+    dutiesTotal, declTotal
+  };
+}
+
+function renderBreakdown(d) {
+  const tbody = document.getElementById("breakdown");
+  tbody.innerHTML = "";
+  const rows = [
+    ["Declared (BDS)", d.declaredBds],
+    ["Freight (BDS)", d.freightBds],
+    ["Customs Value", d.customsValue],
+    ["Import Duty (" + (d.importDutyRate*100).toFixed(2) + "%)", d.importDuty],
+    ["Excise (" + (d.exciseRate*100).toFixed(2) + "%)", d.excise],
+    ["VAT (" + (d.vatPct*100).toFixed(2) + "%)", d.vat],
+    ["Processing Fee", d.proc],
+    ["Total Duties & Fees", d.dutiesTotal],
+    ["Total Declaration Cost", d.declTotal],
+  ];
+  rows.forEach(([name, amt]) => {
+    const tr = document.createElement("tr");
+    const td1 = document.createElement("td");
+    td1.textContent = name;
+    const td2 = document.createElement("td");
+    td2.className = "right";
+    td2.textContent = money(amt);
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    tbody.appendChild(tr);
+  });
+}
+
+function calculateAll() {
+  calcBank();
+  const decl = calcDeclaration();
+
+  setText("duties_total", money(decl.dutiesTotal));
+  setText("decl_total", money(decl.declTotal));
+  renderBreakdown(decl);
+
+  const vendor = num("vendor_usd");
+  if (vendor > 0 && num("decl_usd") === 0) {
+    document.getElementById("duties_sub").innerHTML = '<span class="warn">Declared Price is 0 — duties will be 0.</span>';
+  } else {
+    document.getElementById("duties_sub").textContent = "Import Duty + Excise + VAT + Processing";
+  }
+}
+
+function resetForm() {
+  const ids = ["vendor_usd","pmt1_usd","wire_usd","bank_fxrate","bank_fx_pct","bank_fixed_bds","decl_usd","decl_fxrate","decl_fx_pct","freight_usd","vat_pct","proc_fee","car_duty","hyb_disc","pickup_duty","notes"];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === "bank_fxrate") el.value = 2.02768;
+    else if (id === "bank_fx_pct") el.value = 2;
+    else if (id === "bank_fixed_bds") el.value = 105;
+    else if (id === "decl_fxrate") el.value = 2;
+    else if (id === "decl_fx_pct") el.value = 0;
+    else if (id === "vat_pct") el.value = 17.5;
+    else if (id === "proc_fee") el.value = 10;
+    else if (id === "car_duty") el.value = 45;
+    else if (id === "pickup_duty") el.value = 10;
+    else if (id === "hyb_disc") el.value = 10;
+    else if (id === "notes") el.value = "";
+    else el.value = 0;
+  });
+  document.getElementById("num_pmts").value = "2";
+  document.getElementById("body_type").value = "Car";
+  document.getElementById("engine_type").value = "Petrol";
+  populateCCs();
+  calculateAll();
+}
+
+function getDealObject() {
+  const bank = calcBank();
+  const decl = calcDeclaration();
+  return {
+    ts: new Date().toISOString(),
+    notes: document.getElementById("notes").value || "",
+    vendor_usd: num("vendor_usd"),
+    pmt1_usd: num("pmt1_usd"),
+    pmt2_usd: Number(document.getElementById("pmt2_usd").value || 0),
+    wire_usd: num("wire_usd"),
+    bank_fxrate: num("bank_fxrate"),
+    bank_fx_pct: num("bank_fx_pct"),
+    bank_fixed_bds: num("bank_fixed_bds"),
+    num_pmts: Number(document.getElementById("num_pmts").value || 2),
+    bank_total_bds: bank.totalBds,
+    bank_fees_bds: bank.feesBds,
+
+    decl_usd: num("decl_usd"),
+    decl_fxrate: num("decl_fxrate"),
+    decl_fx_pct: num("decl_fx_pct"),
+    freight_usd: num("freight_usd"),
+    body_type: document.getElementById("body_type").value,
+    engine_type: document.getElementById("engine_type").value,
+    cc_bracket: document.getElementById("cc_bracket").value,
+    vat_pct: num("vat_pct"),
+    proc_fee: num("proc_fee"),
+    car_duty: num("car_duty"),
+    hyb_disc: num("hyb_disc"),
+    pickup_duty: num("pickup_duty"),
+
+    declared_bds: decl.declaredBds,
+    freight_bds: decl.freightBds,
+    customs_value_bds: decl.customsValue,
+    import_duty_rate: decl.importDutyRate,
+    import_duty_bds: decl.importDuty,
+    excise_rate: decl.exciseRate,
+    excise_bds: decl.excise,
+    vat_bds: decl.vat,
+    duties_total_bds: decl.dutiesTotal,
+    declaration_total_bds: decl.declTotal,
+  };
+}
+
+function saveDeal() {
+  const deal = getDealObject();
+  const key = "motorbros_vehiclecalc_deals_v2";
+  const list = JSON.parse(localStorage.getItem(key) || "[]");
+  list.unshift(deal);
+  localStorage.setItem(key, JSON.stringify(list));
+  alert("Saved!");
+}
+
+function exportDeals() {
+  const key = "motorbros_vehiclecalc_deals_v2";
+  const list = JSON.parse(localStorage.getItem(key) || "[]");
+  if (!list.length) {
+    alert("No saved deals yet.");
+    return;
+  }
+  const cols = Object.keys(list[0]);
+  const esc = (v) => {
+    const s = String(v ?? "");
+    if (s.includes('"') || s.includes(",") || s.includes("\n")) return '"' + s.replaceAll('"','""') + '"';
+    return s;
+  };
+  const csv = [cols.join(",")].concat(list.map(o => cols.map(c => esc(o[c])).join(","))).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "motorbros_saved_deals.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("vendor_usd").addEventListener("input", calculateAll);
+document.getElementById("pmt1_usd").addEventListener("input", calculateAll);
+document.getElementById("wire_usd").addEventListener("input", calculateAll);
+document.getElementById("bank_fxrate").addEventListener("input", calculateAll);
+document.getElementById("bank_fx_pct").addEventListener("input", calculateAll);
+document.getElementById("bank_fixed_bds").addEventListener("input", calculateAll);
+document.getElementById("num_pmts").addEventListener("change", calculateAll);
+
+["decl_usd","decl_fxrate","decl_fx_pct","freight_usd","vat_pct","proc_fee","car_duty","hyb_disc","pickup_duty"].forEach(id => {
+  document.getElementById(id).addEventListener("input", calculateAll);
+});
+document.getElementById("body_type").addEventListener("change", calculateAll);
+document.getElementById("cc_bracket").addEventListener("change", calculateAll);
+
+// init
+populateEngines();
+calculateAll();
+</script>
+</body>
+</html>
